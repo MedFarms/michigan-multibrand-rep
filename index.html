@@ -662,7 +662,7 @@ const quickRangeDates = key => {
 };
 const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 // Canonical sales-rep roster (always offered in rep filters/tabs even if absent from a given slice)
-const REP_ROSTER = ["Toby Kassa", "Darren Dabish", "Steve Kirma", "Cristina Moceri", "Shawn Dabish"];
+const REP_ROSTER = ["Towbey Kassa", "Darren Dabish", "Steven Kirma", "Cristina Moceri", "Shawn Dabish"];
 const isPrimaryName = b => PRIMARY_BRANDS.includes((b || "").trim());
 const otherName = raw => {
   const b = (raw || "").trim();
@@ -1542,6 +1542,28 @@ function RepDashboard({
     });
     return Object.values(periods).sort((a, b) => a.period.localeCompare(b.period));
   }, [filtered, topReps.join('|'), grouping]);
+
+  // Total-revenue series (Day/Year) + month pivot with one line per year (Month view)
+  const series = useMemo(() => groupByPeriod(filtered, grouping, r => r._revenue), [filtered, grouping]);
+  const monthYear = useMemo(() => {
+    const m = {},
+      years = new Set();
+    filtered.forEach(r => {
+      if (!r._date) return;
+      const y = r._date.getFullYear();
+      years.add(y);
+      const mi = r._date.getMonth();
+      if (!m[mi]) m[mi] = {};
+      m[mi][y] = (m[mi][y] || 0) + r._revenue;
+    });
+    return {
+      data: MONTH_ABBR.map((name, i) => ({
+        month: name,
+        ...(m[i] || {})
+      })),
+      years: [...years].sort()
+    };
+  }, [filtered]);
   const productBreakdown = useMemo(() => {
     const m = {};
     focusRows.forEach(r => {
@@ -1740,12 +1762,15 @@ function RepDashboard({
     values: scopeValues,
     sub: "net revenue \xB7 after discounts"
   }), /*#__PURE__*/React.createElement("div", {
-    className: "kpi-grid"
+    className: "kpi-grid",
+    style: {
+      gridTemplateColumns: 'repeat(3,1fr)'
+    }
   }, /*#__PURE__*/React.createElement(Kpi, {
-    label: filters.rep ? 'Rep' : 'Top Rep',
-    value: repStats[0] ? repStats[0].name : '—',
+    label: "Net Revenue",
+    value: fmtMoney(kpis.revenue),
     accent: true,
-    sub: repStats[0] ? fmtMoney(repStats[0].revenue) + (!filters.rep && totalRev ? ' · ' + (repStats[0].revenue / totalRev * 100).toFixed(0) + '%' : '') : ''
+    sub: "current scope"
   }), /*#__PURE__*/React.createElement(Kpi, {
     label: "Orders",
     value: fmtNum(kpis.orders),
@@ -1754,17 +1779,15 @@ function RepDashboard({
     label: "Units",
     value: fmtNum(kpis.units),
     sub: "across reps"
-  }), /*#__PURE__*/React.createElement(Kpi, {
-    label: "Reps",
-    value: fmtNum(repStats.length),
-    sub: "with sales"
   })), /*#__PURE__*/React.createElement("div", {
-    className: "kpi-grid"
+    className: "kpi-grid",
+    style: {
+      gridTemplateColumns: 'repeat(3,1fr)'
+    }
   }, /*#__PURE__*/React.createElement(Kpi, {
-    label: "Net Revenue",
-    value: fmtMoney(kpis.revenue),
-    accent: true,
-    sub: "current scope"
+    label: "Active Buyers",
+    value: fmtNum(kpis.buyers),
+    sub: "unique accounts"
   }), /*#__PURE__*/React.createElement(Kpi, {
     label: "Accounts Receivable",
     value: fmtMoney(ar.outstanding),
@@ -1773,10 +1796,6 @@ function RepDashboard({
     label: "Open Accounts",
     value: fmtNum(ar.openInvoices),
     sub: "unpaid invoices"
-  }), /*#__PURE__*/React.createElement(Kpi, {
-    label: "Active Buyers",
-    value: fmtNum(kpis.buyers),
-    sub: "unique accounts"
   })), selectedOrder && /*#__PURE__*/React.createElement("div", {
     className: "focus-banner"
   }, /*#__PURE__*/React.createElement("span", null, "Focused on invoice ", /*#__PURE__*/React.createElement("strong", {
@@ -1792,7 +1811,7 @@ function RepDashboard({
     className: "section-header"
   }, /*#__PURE__*/React.createElement("h2", {
     className: "section-title"
-  }, "Revenue ", /*#__PURE__*/React.createElement("em", null, "over time \xB7 by rep")), /*#__PURE__*/React.createElement("div", {
+  }, "Revenue ", /*#__PURE__*/React.createElement("em", null, "over time")), /*#__PURE__*/React.createElement("div", {
     className: "seg"
   }, [['day', 'Day'], ['month', 'Month'], ['year', 'Year']].map(([k, l]) => /*#__PURE__*/React.createElement("button", {
     key: k,
@@ -1806,11 +1825,11 @@ function RepDashboard({
   }, /*#__PURE__*/React.createElement(ResponsiveContainer, {
     width: "100%",
     height: "100%"
-  }, /*#__PURE__*/React.createElement(LineChart, {
-    data: repSeries,
+  }, grouping === 'month' ? /*#__PURE__*/React.createElement(LineChart, {
+    data: monthYear.data,
     margin: {
       top: 12,
-      right: 12,
+      right: 16,
       left: 4,
       bottom: 0
     }
@@ -1819,16 +1838,16 @@ function RepDashboard({
     strokeDasharray: "2 2",
     vertical: false
   }), /*#__PURE__*/React.createElement(XAxis, {
-    dataKey: "period",
+    dataKey: "month",
     stroke: "var(--text-faint)",
     tick: {
-      fontSize: 10,
+      fontSize: 11,
       fontFamily: 'JetBrains Mono'
     },
+    tickLine: false,
     axisLine: {
       stroke: 'var(--border)'
-    },
-    tickLine: false
+    }
   }), /*#__PURE__*/React.createElement(YAxis, {
     stroke: "var(--text-faint)",
     tick: {
@@ -1836,8 +1855,8 @@ function RepDashboard({
       fontFamily: 'JetBrains Mono'
     },
     tickFormatter: fmtMoney,
-    axisLine: false,
-    tickLine: false
+    tickLine: false,
+    axisLine: false
   }), /*#__PURE__*/React.createElement(Tooltip, {
     contentStyle: {
       background: 'var(--bg-elev)',
@@ -1851,14 +1870,86 @@ function RepDashboard({
       fontSize: 11,
       fontFamily: 'JetBrains Mono'
     }
-  }), topReps.map((rep, i) => /*#__PURE__*/React.createElement(Line, {
-    key: rep,
+  }), monthYear.years.map((y, i) => /*#__PURE__*/React.createElement(Line, {
+    key: y,
     type: "monotone",
-    dataKey: rep,
-    stroke: SERIES_COLORS[i % SERIES_COLORS.length],
+    dataKey: String(y),
+    name: String(y),
+    stroke: CONTRAST[i % CONTRAST.length],
+    strokeWidth: 2.5,
+    dot: {
+      r: 2
+    },
+    connectNulls: true
+  }))) : /*#__PURE__*/React.createElement(ComposedChart, {
+    data: series,
+    margin: {
+      top: 12,
+      right: 12,
+      left: 4,
+      bottom: 0
+    }
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "reprev",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: "var(--accent)",
+    stopOpacity: 0.32
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: "var(--accent)",
+    stopOpacity: 0
+  }))), /*#__PURE__*/React.createElement(CartesianGrid, {
+    stroke: "var(--border-soft)",
+    strokeDasharray: "2 2",
+    vertical: false
+  }), /*#__PURE__*/React.createElement(XAxis, {
+    dataKey: "period",
+    stroke: "var(--text-faint)",
+    tick: {
+      fontSize: 11,
+      fontFamily: 'JetBrains Mono'
+    },
+    tickLine: false,
+    axisLine: {
+      stroke: 'var(--border)'
+    }
+  }), /*#__PURE__*/React.createElement(YAxis, {
+    stroke: "var(--text-faint)",
+    tick: {
+      fontSize: 11,
+      fontFamily: 'JetBrains Mono'
+    },
+    tickFormatter: fmtMoney,
+    tickLine: false,
+    axisLine: false
+  }), /*#__PURE__*/React.createElement(Tooltip, {
+    contentStyle: {
+      background: 'var(--bg-elev)',
+      border: '1px solid var(--border)',
+      borderRadius: 8,
+      fontSize: 12
+    },
+    formatter: v => [fmtMoneyFull(v), 'Revenue']
+  }), grouping === 'year' ? /*#__PURE__*/React.createElement(Bar, {
+    dataKey: "value",
+    name: "Revenue",
+    radius: [3, 3, 0, 0]
+  }, series.map((_, i) => /*#__PURE__*/React.createElement(Cell, {
+    key: i,
+    fill: SERIES_COLORS[i % SERIES_COLORS.length]
+  }))) : /*#__PURE__*/React.createElement(Area, {
+    type: "monotone",
+    dataKey: "value",
+    name: "Revenue",
+    stroke: "var(--accent)",
     strokeWidth: 2,
-    dot: false
-  })))))), /*#__PURE__*/React.createElement("section", {
+    fill: "url(#reprev)"
+  }))))), /*#__PURE__*/React.createElement("section", {
     className: "section"
   }, /*#__PURE__*/React.createElement(SectionHeader, {
     title: "Top buyers",
