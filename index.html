@@ -1288,6 +1288,28 @@ const PAY_COLORS = {
   Unpaid: '#caa11e',
   Unknown: '#9b87ad'
 };
+const WINDOWS = [{
+  key: 'w30',
+  label: '30 days',
+  days: 30,
+  color: '#2e9e57'
+}, {
+  key: 'w60',
+  label: '60 days',
+  days: 60,
+  color: '#caa11e'
+}, {
+  key: 'w90',
+  label: '90 days',
+  days: 90,
+  color: '#e07b2a'
+}, {
+  key: 'w90p',
+  label: '90+ days',
+  days: 90,
+  over: true,
+  color: '#d6433f'
+}];
 const isHouseRep = rep => /house|unassigned/i.test(String(rep || '').trim()) || !String(rep || '').trim();
 
 // Rep filter tabs (fixed roster) — replaces the brand tabs on this dashboard
@@ -1408,22 +1430,16 @@ function RepDashboard({
     });
     return mx || new Date();
   }, [normalized]);
-  const buyerBucket = useMemo(() => {
-    const last = {};
-    preScope.forEach(r => {
-      if (!r._date) return;
-      const b = r.buyer_name || '';
-      if (!last[b] || r._date > last[b]) last[b] = r._date;
-    });
-    const m = {};
-    Object.entries(last).forEach(([b, d]) => {
-      m[b] = agingBucket(daysBetween(refDate, d)).key;
-    });
-    return m;
-  }, [preScope, refDate]);
+  const inWin = (r, key) => {
+    if (!r._date) return false;
+    const d = daysBetween(refDate, r._date);
+    if (key === 'w90p') return d > 90;
+    const w = WINDOWS.find(x => x.key === key);
+    return w ? d <= w.days : true;
+  };
   const inScope = r => scope === 'total' ? r._bucket === 'wholesale' || r._bucket === 'internal' : scope === 'external' ? r._bucket === 'wholesale' : r._bucket === 'internal';
   const scoped = useMemo(() => preScope.filter(inScope), [preScope, scope]);
-  const filtered = useMemo(() => filters.lastOrder ? scoped.filter(r => buyerBucket[r.buyer_name] === filters.lastOrder) : scoped, [scoped, filters.lastOrder, buyerBucket]);
+  const filtered = useMemo(() => filters.lastOrder ? scoped.filter(r => inWin(r, filters.lastOrder)) : scoped, [scoped, filters.lastOrder, refDate]);
 
   // invoice-click focus drives buyers / product / payment
   const focusRows = useMemo(() => selectedOrder ? filtered.filter(r => r._id === selectedOrder) : filtered, [filtered, selectedOrder]);
@@ -1765,7 +1781,7 @@ function RepDashboard({
     className: "filter-label"
   }, "Last Order Date"), /*#__PURE__*/React.createElement("div", {
     className: "aging-btns"
-  }, AGING.map(a => /*#__PURE__*/React.createElement("button", {
+  }, WINDOWS.map(a => /*#__PURE__*/React.createElement("button", {
     key: a.key,
     className: 'aging-btn' + (filters.lastOrder === a.key ? ' aging-btn-active' : ''),
     style: filters.lastOrder === a.key ? {
@@ -1777,7 +1793,7 @@ function RepDashboard({
       color: a.color
     },
     onClick: () => upd('lastOrder', filters.lastOrder === a.key ? '' : a.key)
-  }, RECENCY_LABEL[a.key])))), /*#__PURE__*/React.createElement("div", {
+  }, a.label)))), /*#__PURE__*/React.createElement("div", {
     className: "filter-group",
     style: {
       minWidth: 190
