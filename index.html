@@ -1725,24 +1725,6 @@ function RepDashboard({
     value: filters.to,
     onChange: e => upd('to', e.target.value)
   })), /*#__PURE__*/React.createElement("div", {
-    className: "filter-group",
-    style: {
-      minWidth: 250
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "filter-label"
-  }, "Quick range"), /*#__PURE__*/React.createElement("div", {
-    className: "aging-btns"
-  }, QUICK_RANGES.map(q => /*#__PURE__*/React.createElement("button", {
-    key: q.key,
-    type: "button",
-    className: "aging-btn",
-    style: {
-      borderColor: 'var(--accent-dim)',
-      color: 'var(--accent)'
-    },
-    onClick: () => setQuickRange(q.key)
-  }, q.label)))), /*#__PURE__*/React.createElement("div", {
     className: "filter-group"
   }, /*#__PURE__*/React.createElement("label", {
     className: "filter-label"
@@ -1792,7 +1774,30 @@ function RepDashboard({
   })), /*#__PURE__*/React.createElement("button", {
     className: "filter-reset filter-reset-lg",
     onClick: reset
-  }, "Reset")), /*#__PURE__*/React.createElement(ScopeCards, {
+  }, "Reset")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 16,
+      alignItems: 'center',
+      marginBottom: 28
+    }
+  }, /*#__PURE__*/React.createElement("label", {
+    className: "filter-label",
+    style: {
+      marginBottom: 0
+    }
+  }, "Quick range"), /*#__PURE__*/React.createElement("div", {
+    className: "aging-btns"
+  }, QUICK_RANGES.map(q => /*#__PURE__*/React.createElement("button", {
+    key: q.key,
+    type: "button",
+    className: "aging-btn",
+    style: {
+      borderColor: 'var(--accent-dim)',
+      color: 'var(--accent)'
+    },
+    onClick: () => setQuickRange(q.key)
+  }, q.label)))), /*#__PURE__*/React.createElement(ScopeCards, {
     scope: scope,
     setScope: setScope,
     values: scopeValues,
@@ -2231,7 +2236,7 @@ function RepDashboard({
   }, /*#__PURE__*/React.createElement(SectionHeader, {
     title: "Rep",
     em: "detail",
-    meta: '4 reps'
+    meta: '5 reps'
   }), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
@@ -2256,7 +2261,7 @@ function RepDashboard({
     className: "num"
   }, "Buyers"), /*#__PURE__*/React.createElement("th", {
     className: "num"
-  }, "Avg Order"))), /*#__PURE__*/React.createElement("tbody", null, repStats.filter(r => ['Towbey Kassa', 'Darren Dabish', 'Cristina Moceri', 'Shawn Dabish'].includes(r.name)).map((r, i) => /*#__PURE__*/React.createElement("tr", {
+  }, "Avg Order"))), /*#__PURE__*/React.createElement("tbody", null, repStats.filter(r => ['Towbey Kassa', 'Darren Dabish', 'Steven Kirma', 'Cristina Moceri', 'Shawn Dabish'].includes(r.name)).map((r, i) => /*#__PURE__*/React.createElement("tr", {
     key: i
   }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("strong", null, r.name)), /*#__PURE__*/React.createElement("td", {
     className: "num"
