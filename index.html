@@ -1344,7 +1344,7 @@ function App() {
   const {
     data,
     error
-  } = useData('sales_data.json.gz');
+  } = useData('https://raw.githubusercontent.com/MedFarms/michigan-multibrand-rep/main/sales_data.json.gz');
   const [scope, setScope] = useState('external');
   const [grouping, setGrouping] = useState('month');
   const [filters, setFilters] = useState({
